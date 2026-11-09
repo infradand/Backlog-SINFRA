@@ -152,7 +152,14 @@ details summary{cursor:pointer;font-weight:600;color:var(--slate);font-size:12px
 .rxt .addlibre button{font-size:11px}
 @media print{.rx-nav{display:none}}
 @media(max-width:700px){main{padding:10px}.f2,.f3,.reqgrid,.mapgrid{grid-template-columns:1fr}.twrap{max-height:none}}
-@media print{.hdr,.drawer,.overlay,.noprint,.toast{display:none!important}main{padding:0;max-width:none}.card{box-shadow:none}body{background:#fff}}
+.login{position:fixed;inset:0;background:linear-gradient(135deg,#36424A,#0B3040);display:grid;place-items:center;z-index:200}
+.login .box{background:#fff;border-radius:16px;padding:28px 30px;width:min(420px,92vw);box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.login .box h1{margin:0 0 4px;font-size:18px}.login .box p{margin:0 0 16px;color:var(--muted);font-size:13px}
+.login .modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 12px}.login .modes label{border:2px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;font-size:13px}.login .modes label.on{border-color:var(--teal);background:#eaf7f9}
+.login .modes small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+body.ro .ro-hide{display:none!important}body.ro .rxt input,body.ro .rxt select,body.ro .rxt textarea{pointer-events:none;opacity:.7}
+.userpill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;display:inline-flex;gap:8px;align-items:center}.userpill button{background:none;border:none;color:#ffd27a;font-weight:700;cursor:pointer;font-size:12px}
+@media print{.hdr,.drawer,.overlay,.noprint,.toast,.login{display:none!important}main{padding:0;max-width:none}.card{box-shadow:none}body{background:#fff}}
 </style>
 </head>
 <body>
@@ -163,8 +170,10 @@ details summary{cursor:pointer;font-weight:600;color:var(--slate);font-size:12px
     <span class="pill">Semana actual <b id="pillSem">–</b></span>
     <span class="pill" id="pillGh" title="Estado de guardado">● Local</span>
     <div class="bellwrap"><button class="bellbtn" id="btnBell" title="Alertas">🔔<span class="badge" id="bellN" style="display:none">0</span></button><div class="bellbox" id="bellbox"></div></div>
-    <button class="ibtn" id="btnSaveGh" title="Guardar en GitHub">☁ Guardar</button>
-    <button class="ibtn g" id="btnNew">+ Nueva tarea</button>
+    <button class="ibtn" id="btnXlsView" title="Exportar a Excel lo que muestra esta pestaña (con los filtros aplicados)">⬇ Excel de esta vista</button>
+    <span class="userpill" id="userPill"></span>
+    <button class="ibtn ro-hide" id="btnSaveGh" title="Guardar en GitHub">☁ Guardar</button>
+    <button class="ibtn g ro-hide" id="btnNew">+ Nueva tarea</button>
   </div>
   <div class="tabs" id="tabs">
     <button class="tab on" data-v="backlog">Backlog <span class="n" id="nBacklog"></span></button>
@@ -178,6 +187,7 @@ details summary{cursor:pointer;font-weight:600;color:var(--slate);font-size:12px
     <button class="tab" data-v="semanas">Semanas</button>
     <button class="tab" data-v="mga">MGA <span class="n" id="nMga"></span></button>
     <button class="tab" data-v="reunion">Reunión</button>
+    <button class="tab" data-v="historial">Historial</button>
     <button class="tab" data-v="config">Configuración</button>
   </div>
 </div>
@@ -270,12 +280,20 @@ details summary{cursor:pointer;font-weight:600;color:var(--slate);font-size:12px
   <div class="kpis" id="kpMga"></div>
   <div class="card"><div class="row" style="margin-bottom:8px"><input class="in" id="qMga" placeholder="🔍 Buscar en MGA…" style="flex:1;min-width:240px"><span class="sm muted" id="cntMga"></span></div><div class="twrap" id="mgaList"></div></div>
 </section>
+<!-- HISTORIAL DE MOVIMIENTOS -->
+<section class="view" id="v-historial">
+  <div class="card">
+    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">Historial de movimientos</h2><input class="in" id="hQ" placeholder="🔍 Buscar (tarea, detalle, usuario)…" style="flex:1;min-width:220px"><select class="in w" id="hUser"><option value="">Usuario: todos</option></select><select class="in w" id="hTipo"><option value="">Tipo: todos</option></select><input class="in w" type="date" id="hDesde" title="Desde"><input class="in w" type="date" id="hHasta" title="Hasta"><span class="sm muted" id="hCnt"></span></div>
+    <div class="twrap" id="hList"></div>
+  </div>
+</section>
 <!-- CONFIG -->
 <section class="view" id="v-config">
   <div class="row" style="align-items:flex-start">
     <div class="card" style="flex:1;min-width:320px">
       <h3>General</h3>
       <div class="f2"><div class="f"><label>Horas por día</label><input class="in" id="cHoras" type="number" min="1"></div><div class="f"><label>Semana actual (vacío = automática ISO)</label><input class="in" id="cSem" type="number" min="1" max="53" placeholder="auto"></div></div>
+      <div class="f2"><div class="f"><label>Clave del modo Edición (inicio de sesión)</label><input class="in" id="cPin" type="password" placeholder="BeKa"></div><div class="f"><label>Guardar historial de movimientos</label><select class="in" id="cLogN"><option value="5000">Últimos 5.000 eventos</option><option value="20000">Últimos 20.000 eventos</option><option value="0">Sin límite</option></select></div></div>
       <div class="f"><label>Equipos (misma lista que los calendarios de detención) · uno por línea</label><textarea class="in" id="cEq" rows="7"></textarea></div>
       <div class="f"><label>Causas (cierre y movimientos) · una por línea</label><textarea class="in" id="cCausas" rows="5"></textarea></div>
       <div class="f"><label>Alias de equipos (para cruzar el texto libre de la matriz con el calendario) · formato EQUIPO: alias1, alias2</label><textarea class="in" id="cAlias" rows="7"></textarea></div>
@@ -324,6 +342,16 @@ create policy "anon_all" on backlog_sinfra for all to anon using (true) with che
 </section>
 </main>
 
+<div class="login" id="login">
+  <form class="box" id="loginForm">
+    <h1>Backlog de Infraestructura · SINFRA</h1><p>Ingresa tu nombre y elige cómo vas a entrar.</p>
+    <div class="f"><label>Nombre</label><input class="in" id="lgNombre" placeholder="Nombre y apellido" autocomplete="name" required></div>
+    <div class="modes"><label class="on" data-m="edit"><input type="radio" name="lgMode" value="edit" checked hidden><b>Edición</b><small>Planificar, mover, cerrar semanas, importar. Requiere clave.</small></label><label data-m="view"><input type="radio" name="lgMode" value="view" hidden><b>Visualización</b><small>Solo lectura: reunión, semanas, backlog.</small></label></div>
+    <div class="f" id="lgPinBox"><label>Clave de edición</label><input class="in" id="lgPin" type="password" autocomplete="current-password"></div>
+    <div id="lgErr" class="errbox" style="display:none"></div>
+    <button class="btn p" style="width:100%;padding:10px" type="submit">Entrar</button>
+  </form>
+</div>
 <div class="overlay" id="overlay"></div>
 <aside class="drawer" id="drawer">
   <header><h2 id="dTitle">Nueva tarea</h2><button class="ibtn" id="dClose">✕</button></header>
@@ -365,8 +393,8 @@ const SEED=JSON.parse(document.getElementById('seed').textContent);
 /* conexión Supabase precargada (clave publishable: pública por diseño) */
 const SB_DEFAULT={url:'https://wqtotqkjsmcwbxppcvps.supabase.co',key:'sb_publishable_4kTBi_251GmIj4FcsxKHmw_0gqxEo24',tbl:'backlog_sinfra'};
 let S;
-function fresh(){return {tasks:SEED.tasks.map(t=>Object.assign({estado:'abierta',reprog:0,forzada:false,idMatriz:'',mga:false,anio:2026},t)),mgaFecha:'',libres:[],eliminadas:[],bolsas:{piping:[18,18,18,18,18,18,18],chancado:[13,13,13,13,13,13,13],concentrador:[17,17,17,17,17,17,17],otro:[0,0,0,0,0,0,0]},secGrupo:{},secciones:SEED.secciones,equipos:SEED.equipos,causas:SEED.causas,horasDia:7,semManual:'',aliasEquipos:SEED.aliasEquipos||'',calendarios:[],calAlerts:[],mapMatriz:null,gh:{owner:'',repo:'',branch:'main',path:'data',token:''},sb:Object.assign({},SB_DEFAULT),updated:0};}
-function load(){try{const j=localStorage.getItem(LS);if(j){S=JSON.parse(j);S.gh=S.gh||{owner:'',repo:'',branch:'main',path:'data',token:''};S.sb=S.sb||{};if(!S.sb.url)S.sb=Object.assign({},SB_DEFAULT);S.updated=S.updated||0;S.calendarios=S.calendarios||[];S.calAlerts=S.calAlerts||[];if(S.aliasEquipos===undefined)S.aliasEquipos=SEED.aliasEquipos||'';S.tasks.forEach(t=>{if(t.anio==null)t.anio=t.semana?2026:null;if(t.mga==null)t.mga=false;});S.libres=S.libres||[];S.eliminadas=S.eliminadas||[];S.bolsas=S.bolsas||{piping:[18,18,18,18,18,18,18],chancado:[13,13,13,13,13,13,13],concentrador:[17,17,17,17,17,17,17],otro:[0,0,0,0,0,0,0]};S.secGrupo=S.secGrupo||{};return;}}catch(e){}S=fresh();}
+function fresh(){return {tasks:SEED.tasks.map(t=>Object.assign({estado:'abierta',reprog:0,forzada:false,idMatriz:'',mga:false,anio:2026},t)),mgaFecha:'',libres:[],eliminadas:[],log:[],pin:'BeKa',logN:5000,bolsas:{piping:[18,18,18,18,18,18,18],chancado:[13,13,13,13,13,13,13],concentrador:[17,17,17,17,17,17,17],otro:[0,0,0,0,0,0,0]},secGrupo:{},secciones:SEED.secciones,equipos:SEED.equipos,causas:SEED.causas,horasDia:7,semManual:'',aliasEquipos:SEED.aliasEquipos||'',calendarios:[],calAlerts:[],mapMatriz:null,gh:{owner:'',repo:'',branch:'main',path:'data',token:''},sb:Object.assign({},SB_DEFAULT),updated:0};}
+function load(){try{const j=localStorage.getItem(LS);if(j){S=JSON.parse(j);S.gh=S.gh||{owner:'',repo:'',branch:'main',path:'data',token:''};S.sb=S.sb||{};if(!S.sb.url)S.sb=Object.assign({},SB_DEFAULT);S.updated=S.updated||0;S.calendarios=S.calendarios||[];S.calAlerts=S.calAlerts||[];if(S.aliasEquipos===undefined)S.aliasEquipos=SEED.aliasEquipos||'';S.tasks.forEach(t=>{if(t.anio==null)t.anio=t.semana?2026:null;if(t.mga==null)t.mga=false;});S.libres=S.libres||[];S.eliminadas=S.eliminadas||[];S.log=S.log||[];if(!S.pin||S.pin==='sinfra')S.pin='BeKa';if(S.logN==null)S.logN=5000;S.bolsas=S.bolsas||{piping:[18,18,18,18,18,18,18],chancado:[13,13,13,13,13,13,13],concentrador:[17,17,17,17,17,17,17],otro:[0,0,0,0,0,0,0]};S.secGrupo=S.secGrupo||{};return;}}catch(e){}S=fresh();}
 
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}}
 let dirty=false;
@@ -410,6 +438,14 @@ function eqMatchCal(taskEq,calEq){ // equipo de tarea (texto libre) vs equipo de
   return names.some(n=>n.length>=2&&(tt.includes(' '+n+' ')||t===n||(n.length>=4&&t.startsWith(n))));
 }
 const T=id=>S.tasks.find(t=>t.id===id);
+const LAST={}; // últimas filas mostradas por vista (para exportar lo visible)
+/* ---------- sesión (inicio de sesión) ---------- */
+let SES=null;try{SES=JSON.parse(sessionStorage.getItem('sinfra_ses')||'null');}catch(e){}
+const RO=()=>!SES||SES.modo==='view';
+const USER=()=>SES?SES.nombre:'—';
+function applySession(){document.body.classList.toggle('ro',RO());$('#login').style.display=SES?'none':'';$('#userPill').innerHTML=SES?`👤 ${esc(SES.nombre)} · ${SES.modo==='view'?'Visualización':'Edición'} <button id="btnLogout" title="Cerrar sesión">Salir</button>`:'';const b=$('#btnLogout');if(b)b.onclick=()=>{sessionStorage.removeItem('sinfra_ses');SES=null;applySession();};}
+/* ---------- historial de movimientos (bitácora global) ---------- */
+function logEvt(tipo,t,detalle){S.log=S.log||[];S.log.unshift({ts:nowStr(),user:USER(),tipo,id:t?t.id:null,act:t?String(t.actividad||'').slice(0,90):'',det:String(detalle||'').slice(0,240)});const n=+S.logN||0;if(n&&S.log.length>n)S.log.length=n;}
 
 /* ---------- campos calculados y estados ---------- */
 function horas(t){return (t.dotacion&&t.dias)?+(t.dotacion*t.dias*S.horasDia).toFixed(1):null;}
@@ -489,10 +525,10 @@ function render(){
   document.documentElement.style.setProperty('--hdrH',($('.hdr').offsetHeight||96)+'px');
   $('#pillSem').textContent=curWeek();
   const ab=abiertas();$('#nBacklog').textContent=ab.length;$('#nSin').textContent=ab.filter(t=>!t.semana).length;$('#nListas').textContent=ab.filter(t=>estado(t)==='L').length;$('#nPend').textContent=ab.filter(t=>estado(t)==='P').length;$('#nVal').textContent=ab.filter(t=>t.validacion==='Por validar').length;$('#nMga').textContent=ab.filter(t=>t.mga).length;$('#nEjec').textContent=S.tasks.filter(t=>t.estado==='ejecutada').length;
-  ({backlog:renderBacklog,sinsemana:renderSin,listas:renderListas,pendientes:renderPend,validar:renderVal,detencion:renderDet,cierre:renderCierre,semanas:renderSemanas,mga:renderMga,reunion:renderReunion,ejecutadas:renderEjec,config:renderConfig})[curView()]();
+  ({backlog:renderBacklog,sinsemana:renderSin,listas:renderListas,pendientes:renderPend,validar:renderVal,detencion:renderDet,cierre:renderCierre,semanas:renderSemanas,mga:renderMga,reunion:renderReunion,ejecutadas:renderEjec,historial:renderHist,config:renderConfig})[curView()]();
   renderBell();setGhPill();
 }
-document.addEventListener('click',e=>{const m=e.target.closest('[data-mga]');if(m){const t=T(+m.dataset.mga);t.mga=!t.mga;t.cambios=t.cambios||[];t.cambios.push({campo:'MGA',de:t.mga?'No':'Sí',a:t.mga?'Sí':'No',fecha:nowStr()});t.modificado=nowStr();save();render();toast(t.mga?`#${t.id} marcada como MGA`:`#${t.id} quitada de MGA`);return;}const o=e.target.closest('[data-open]');if(o&&!e.target.closest('#bellbox'))openTask(+o.dataset.open);});
+document.addEventListener('click',e=>{const m=e.target.closest('[data-mga]');if(m){if(!requireEdit())return;const t=T(+m.dataset.mga);t.mga=!t.mga;t.cambios=t.cambios||[];t.cambios.push({campo:'MGA',de:t.mga?'No':'Sí',a:t.mga?'Sí':'No',fecha:nowStr()});t.modificado=nowStr();logEvt('MGA',t,t.mga?'Marcada como MGA':'Quitada de MGA');save();render();toast(t.mga?`#${t.id} marcada como MGA`:`#${t.id} quitada de MGA`);return;}const o=e.target.closest('[data-open]');if(o&&!e.target.closest('#bellbox'))openTask(+o.dataset.open);});
 
 /* ---------- fila estándar ---------- */
 function rowHtml(t,extra){return `<tr class="${(t.reprog||0)>=2?'rep2':''}"><td class="muted xs">${t.id}</td><td>${semHtml(t)}</td><td>${estHtml(t)}</td><td class="xs">${esc(t.seccion)}</td><td class="act" data-open="${t.id}">${esc(t.actividad)}</td><td class="xs">${esc(t.area||'')}</td><td class="xs">${esc(t.equipo||'')}</td><td class="xs">${esc(t.ot||'')}</td><td class="num">${t.dotacion??''}</td><td class="num">${t.dias??''}</td><td class="xs">${tipo(t)}</td><td class="num">${t.semana?`<b>${wkLabel(tWk(t))}</b>`:'<span class="chip na">Sin semana</span>'}</td><td>${prioridad(t)}</td><td class="xs">${esc(t.criticidad||'')}</td><td class="xs">${esc(t.requiereDetencion||'–')}</td><td class="xs">${esc(t.origen)}</td><td>${t.validacion==='Por validar'?'<span class="chip pend">Por validar</span>':'<span class="chip ok">✓</span>'}</td><td><button class="btn s" data-mga="${t.id}" title="${t.mga?'Quitar de MGA':'Marcar como MGA'}" style="${t.mga?'background:var(--gold);border-color:var(--gold)':''}">${t.mga?'★ MGA':'☆'}</button></td><td class="num muted">${diasBacklog(t)}</td>${extra||''}</tr>`;}
@@ -516,6 +552,7 @@ function renderBacklog(){
   const ord=$('#fOrden').value;rows.sort((a,b)=>ord==='antig'?(diasBacklog(b)||0)-(diasBacklog(a)||0)||a.id-b.id:ord==='ingreso'?String(a.ingreso||'9').localeCompare(String(b.ingreso||'9'))||a.id-b.id:ord==='semana'?((a.semana?wkDiff(tWk(a),curWk()):999)-(b.semana?wkDiff(tWk(b),curWk()):999))||a.id-b.id:a.id-b.id);
   const ab=abiertas();const c={verde:0,amarillo:0,rojo:0,gris:0};ab.forEach(t=>c[semaforo(t)]++);
   $('#kpBacklog').innerHTML=`<div class="kpi s"><div class="v">${ab.length}</div><div class="l">Backlog abierto</div></div><div class="kpi"><div class="v">${ab.filter(t=>estado(t)==='L').length}</div><div class="l">Listas para programar</div></div><div class="kpi g"><div class="v">${ab.filter(t=>estado(t)==='P').length}</div><div class="l">Pendientes</div></div><div class="kpi o"><div class="v">${ab.filter(t=>!t.semana).length}</div><div class="l">Sin semana</div></div><div class="kpi r"><div class="v">${c.rojo}</div><div class="l">✗ Rojo</div></div><div class="kpi g"><div class="v">${c.amarillo}</div><div class="l">⏳ Amarillo</div></div><div class="kpi"><div class="v">${c.verde}</div><div class="l">✓ Verde</div></div><div class="kpi s"><div class="v">${c.gris}</div><div class="l">– No requiere</div></div>`;
+  LAST.backlog=rows;
   $('#tbody').innerHTML=rows.slice(0,600).map(t=>rowHtml(t)).join('')||'<tr><td colspan="19" class="empty">Sin tareas con esos filtros</td></tr>';
   $('#tblFoot').textContent=`${rows.length} tareas${rows.length>600?' (mostrando 600, filtra para acotar)':''} · dotación ${rows.reduce((a,t)=>a+(+t.dotacion||0),0)} · horas ${rows.reduce((a,t)=>a+(horas(t)||0),0).toFixed(0)}`;
 }
@@ -530,18 +567,18 @@ function renderElim(){
   $('#elimList').innerHTML=rows.length?`<table class="tbl"><thead><tr><th>ID</th><th>Eliminada</th><th>Motivo</th><th>Sección</th><th>Actividad</th><th>Área</th><th>Equipo</th><th>OT/Aviso</th><th>N° aviso</th><th>Semana</th><th>Origen</th><th>Obs.</th><th></th></tr></thead><tbody>${rows.map(e=>{const t=e.t;return `<tr><td class="muted xs">${t.id}</td><td class="xs">${fd(e.fecha)}</td><td class="xs">${esc(e.motivo)}${e.con?` <span class="act" data-open="${e.con}">→ ver #${e.con}</span>`:''}</td><td class="xs">${esc(t.seccion)}</td><td>${esc(t.actividad)}</td><td class="xs">${esc(t.area||'')}</td><td class="xs">${esc(t.equipo||'')}</td><td class="xs">${esc(t.ot||'')}</td><td class="xs">${esc(t.idMatriz||'')}</td><td class="xs">${t.semana?'S'+t.semana:'—'}</td><td class="xs">${esc(t.origen)}</td><td class="xs muted">${esc((t.obs||'').slice(0,80))}</td><td style="white-space:nowrap"><button class="btn s" data-rest="${t.id}">Restaurar</button> <button class="btn s d" data-purge="${t.id}" title="Borrar definitivamente">✕</button></td></tr>`;}).join('')}</tbody></table>`:'<div class="empty">No hay tareas eliminadas'+(q?' con ese texto':'')+'</div>';
 }
 $('#qElim').oninput=renderElim;
-$('#elimList').onclick=e=>{const r=e.target.closest('[data-rest]'),p=e.target.closest('[data-purge]');
-  if(r){const i=S.eliminadas.findIndex(x=>x.t.id===+r.dataset.rest);const t=S.eliminadas[i].t;if(S.tasks.some(x=>x.id===t.id))t.id=nextId();t.cambios=t.cambios||[];t.cambios.push({campo:'Estado',de:'eliminada',a:'restaurada',fecha:nowStr()});t.modificado=nowStr();S.tasks.push(t);S.eliminadas.splice(i,1);save();render();toast(`#${t.id} restaurada`);return;}
+$('#elimList').onclick=e=>{if(!requireEdit())return;const r=e.target.closest('[data-rest]'),p=e.target.closest('[data-purge]');
+  if(r){const i=S.eliminadas.findIndex(x=>x.t.id===+r.dataset.rest);const t=S.eliminadas[i].t;if(S.tasks.some(x=>x.id===t.id))t.id=nextId();t.cambios=t.cambios||[];t.cambios.push({campo:'Estado',de:'eliminada',a:'restaurada',fecha:nowStr()});t.modificado=nowStr();S.tasks.push(t);S.eliminadas.splice(i,1);logEvt('Restauración',t,'Restaurada desde Eliminadas');save();render();toast(`#${t.id} restaurada`);return;}
   if(p){if(!confirm('¿Borrar definitivamente? Ya no se podrá restaurar.'))return;S.eliminadas=S.eliminadas.filter(x=>x.t.id!==+p.dataset.purge);save();renderElim();}};
 
 /* ---------- SIN SEMANA / LISTAS / PENDIENTES / POR VALIDAR ---------- */
 /* buscador común: nombre (sin tildes), OT/aviso, ID exacto */
 function matchQ(t,raw){const q=norm(raw);if(!q)return true;if(/^\d+$/.test(raw.trim()))return String(t.id)===raw.trim()||String(t.ot||'').includes(raw.trim())||String(t.idMatriz||'').includes(raw.trim());return norm([t.actividad,t.ot,t.area,t.equipo,t.seccion,t.obs,t.idMatriz].join(' ')).includes(q);}
-function renderSin(){const q=$('#qSin').value;const all=abiertas().filter(t=>!t.semana);const rows=all.filter(t=>matchQ(t,q)).sort((a,b)=>diasBacklog(b)-diasBacklog(a));$('#cntSin').textContent=`${rows.length} de ${all.length}`;$('#sinList').innerHTML=table(rows.slice(0,600).map(t=>rowHtml(t)))+(rows.length>600?'<div class="empty">Mostrando 600 — usa el buscador para acotar</div>':'');}
+function renderSin(){const q=$('#qSin').value;const all=abiertas().filter(t=>!t.semana);const rows=LAST.listas=all.filter(t=>matchQ(t,q)).sort((a,b)=>diasBacklog(b)-diasBacklog(a));LAST.sinsemana=rows;$('#cntSin').textContent=`${rows.length} de ${all.length}`;$('#sinList').innerHTML=table(rows.slice(0,600).map(t=>rowHtml(t)))+(rows.length>600?'<div class="empty">Mostrando 600 — usa el buscador para acotar</div>':'');}
 $('#qSin').oninput=renderSin;$('#qListas').oninput=()=>renderListas();$('#qMga').oninput=()=>renderMga();
 function renderListas(){const q=$('#qListas').value;const all=abiertas().filter(t=>estado(t)==='L');$('#cntListas').textContent=`${all.filter(t=>matchQ(t,q)).length} de ${all.length}`;const rows=all.filter(t=>matchQ(t,q)).sort((a,b)=>((a.semana?wkDiff(tWk(a),curWk()):999)-(b.semana?wkDiff(tWk(b),curWk()):999))||a.id-b.id);$('#listasList').innerHTML=table(rows.map(t=>rowHtml(t)));}
 function renderPend(){
-  const ab=abiertas().filter(t=>estado(t)==='P');const g={};
+  const ab=abiertas().filter(t=>estado(t)==='P');LAST.pendientes=ab;const g={};
   ab.forEach(t=>{faltas(t).forEach(f=>{const k=f.startsWith('dato:')?'Datos mínimos':f.startsWith('evaluar')?'Requerimientos sin evaluar':f==='definir requerimientos'?'Requerimientos sin definir':'Falta '+f;(g[k]=g[k]||[]).push(t);});});
   const sinOt=abiertas().filter(t=>!t.ot);
   $('#pendList').innerHTML=Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k,arr])=>`<details open style="margin-bottom:8px"><summary>${esc(k)} (${arr.length})</summary>${table([...new Set(arr)].map(t=>rowHtml(t)))}</details>`).join('')+`<details style="margin-top:14px"><summary>Tareas sin OT/aviso (${sinOt.length})</summary>${table(sinOt.map(t=>rowHtml(t)))}</details>`||'<div class="empty">Sin pendientes</div>';
@@ -549,11 +586,11 @@ function renderPend(){
 function similares(t,n){return abiertas().filter(x=>x.id!==t.id&&x.validacion!=='Por validar').map(x=>({x,s:sim(t.actividad,x.actividad)+(eqMatch(t.equipo,x.equipo)?.2:0)+(t.ot&&t.ot===x.ot?.5:0)})).filter(o=>o.s>=0.5).sort((a,b)=>b.s-a.s).slice(0,n||3);}
 function renderVal(){
   renderElim();
-  const rows=abiertas().filter(t=>t.validacion==='Por validar');
+  const rows=abiertas().filter(t=>t.validacion==='Por validar');LAST.validar=rows;
   $('#valList').innerHTML=rows.length?rows.map(t=>{const sm=similares(t);return `<div class="card" style="margin-bottom:8px;border-left:4px solid var(--gold)"><div class="row" style="justify-content:space-between"><div><b class="act" data-open="${t.id}">#${t.id} ${esc(t.actividad)}</b><div class="xs muted">${esc(t.seccion)} · ${esc(t.area||'')} · ${t.equipo?esc(t.equipo)+' · ':''}${wkLabel(tWk(t))} · origen ${esc(t.origen)} · ${esc(t.obs||'')}</div></div><div class="row"><button class="btn s" data-open="${t.id}">Completar</button><button class="btn s p" data-validar="${t.id}">Validar</button></div></div>${sm.length?`<div class="warn" style="margin-top:8px">Posibles duplicados: ${sm.map(o=>`<div class="row" style="margin-top:4px"><span>#${o.x.id} ${esc(o.x.actividad)} <span class="muted xs">(${wkLabel(tWk(o.x))}, similitud ${Math.round(o.s*100)}%)</span></span><button class="btn s" data-unir="${t.id}" data-con="${o.x.id}">Unir con #${o.x.id}</button></div>`).join('')}</div>`:''}</div>`;}).join(''):'<div class="empty">Nada por validar ✓</div>';
 }
-$('#valList').onclick=e=>{const v=e.target.closest('[data-validar]');if(v){const t=T(+v.dataset.validar);t.validacion='Validada';t.cambios.push({campo:'Validación',de:'Por validar',a:'Validada',fecha:nowStr()});t.modificado=nowStr();save();render();toast('Validada #'+t.id);return;}
-  const u=e.target.closest('[data-unir]');if(u){const a=T(+u.dataset.unir),b=T(+u.dataset.con);if(!confirm(`Unir #${a.id} con #${b.id}: se conserva #${b.id} (se le copia la semana ${a.semana||'—'} si no tenía) y se elimina #${a.id}. ¿Continuar?`))return;if(!b.semana&&a.semana){b.historial.push({semana:a.semana,resultado:'Asignada al unir con #'+a.id,causa:'',fecha:today()});b.semana=a.semana;b.anio=a.anio;}if(!b.ot&&a.ot)b.ot=a.ot;b.obs=[b.obs,a.obs].filter(Boolean).join(' · ');b.cambios.push({campo:'Unión',de:'#'+a.id,a:'#'+b.id,fecha:nowStr()});eliminarTarea(a,'Repetida · unida con #'+b.id,b.id);save();render();toast(`#${a.id} unida con #${b.id} (quedó en Eliminadas)`);}};
+$('#valList').onclick=e=>{if(e.target.closest('[data-validar],[data-unir]')&&!requireEdit())return;const v=e.target.closest('[data-validar]');if(v){const t=T(+v.dataset.validar);t.validacion='Validada';t.cambios.push({campo:'Validación',de:'Por validar',a:'Validada',fecha:nowStr()});t.modificado=nowStr();logEvt('Validación',t,'Validada');save();render();toast('Validada #'+t.id);return;}
+  const u=e.target.closest('[data-unir]');if(u){const a=T(+u.dataset.unir),b=T(+u.dataset.con);if(!confirm(`Unir #${a.id} con #${b.id}: se conserva #${b.id} (se le copia la semana ${a.semana||'—'} si no tenía) y se elimina #${a.id}. ¿Continuar?`))return;if(!b.semana&&a.semana){b.historial.push({semana:a.semana,resultado:'Asignada al unir con #'+a.id,causa:'',fecha:today()});b.semana=a.semana;b.anio=a.anio;}if(!b.ot&&a.ot)b.ot=a.ot;b.obs=[b.obs,a.obs].filter(Boolean).join(' · ');b.cambios.push({campo:'Unión',de:'#'+a.id,a:'#'+b.id,fecha:nowStr()});eliminarTarea(a,'Repetida · unida con #'+b.id,b.id);logEvt('Unión',a,'Unida con #'+b.id);save();render();toast(`#${a.id} unida con #${b.id} (quedó en Eliminadas)`);}};
 
 /* ---------- OPORTUNIDAD DE DETENCIÓN ---------- */
 function renderDet(){
@@ -566,7 +603,7 @@ function renderDet(){
   const prev=sel.value;sel.innerHTML='<option value="">Semanas: actual y siguientes</option><option value="todas">Todas las semanas del calendario</option>'+keys.map(k=>`<option value="${wkKey(k)}">S${k.w} · ${weekDates(k.w,k.y)} ${k.y}${wkDiff(k,cw)<0?' (pasada)':wkDiff(k,cw)===0?' (actual)':''}</option>`).join('');sel.value=[...sel.options].some(o=>o.value===prev)?prev:'';
   const fsel=sel.value;
   const g={};V.forEach(v=>{const k=vWk(v);if(fsel===''&&wkDiff(k,cw)<0)return;if(fsel&&fsel!=='todas'&&wkKey(k)!==fsel)return;const key=v.equipo+'|'+wkKey(k);(g[key]=g[key]||{equipo:v.equipo,k,horas:0,dias:[]});g[key].horas+=+v.horas||0;g[key].dias.push(`${fd(v.fecha)} ${v.turno||''} ${v.horas}h`);});
-  const groups=Object.values(g).sort((a,b)=>wkDiff(a.k,b.k)||a.equipo.localeCompare(b.equipo));
+  const groups=Object.values(g).sort((a,b)=>wkDiff(a.k,b.k)||a.equipo.localeCompare(b.equipo));LAST.detencion=groups;
   const det=abiertas().filter(t=>t.requiereDetencion==='Sí');const cand0=abiertas().filter(t=>t.requiereDetencion===''&&t.equipo);
   const nMatch=abiertas().filter(t=>t.equipo&&groups.some(w=>eqMatchCal(t.equipo,w.equipo))).length;
   $('#detList').innerHTML=`<div class="card" style="margin-bottom:12px"><div class="detsum"><span class="chip"><b>${groups.length}</b> ventanas</span><span class="chip ok"><b>${det.length}</b> con detención = Sí</span><span class="chip pend"><b>${cand0.length}</b> detención sin definir (con equipo)</span><span class="chip info"><b>${nMatch}</b> cruzan con estas ventanas</span><span class="xs muted" style="align-self:center">Si una tarea no cruza, agrega el alias del equipo en Configuración.</span></div></div>`+(groups.length?`<div class="vent">`+groups.map(w=>{
@@ -584,8 +621,8 @@ function renderDet(){
     </div></div>`;}).join('')+'</div>':'<div class="card empty">No hay ventanas en el rango elegido.</div>');
 }
 $('#detSem').onchange=renderDet;
-$('#detList').onclick=e=>{const si=e.target.closest('[data-detsi],[data-detno]');if(si){const t=T(+(si.dataset.detsi||si.dataset.detno));const v=si.dataset.detsi?'Sí':'No';t.cambios.push({campo:'Requiere detención',de:t.requiereDetencion||'(vacío)',a:v,fecha:nowStr()});t.requiereDetencion=v;t.modificado=nowStr();save();renderDet();renderBell();toast(`#${t.id}: requiere detención = ${v}`);return;}
-  const p=e.target.closest('[data-prog]');if(!p)return;const t=T(+p.dataset.prog);const w=+p.dataset.w,y=+p.dataset.y;const de=tWk(t);t.historial.push({semana:w,anio:y,resultado:de?'Movida desde '+wkLabel(de):'Asignada desde Sin semana',causa:'Oportunidad de detención',fecha:today(),causaOk:true});if(de){t.historial.push({semana:de.w,anio:de.y,resultado:'Movida a S'+w,causa:'Oportunidad de detención',fecha:today(),causaOk:true});t.reprog=(t.reprog||0)+1;}t.semana=w;t.anio=y;t.modificado=nowStr();save();render();toast(`#${t.id} → S${w}`);};
+$('#detList').onclick=e=>{if(e.target.closest('[data-detsi],[data-detno],[data-prog]')&&!requireEdit())return;const si=e.target.closest('[data-detsi],[data-detno]');if(si){const t=T(+(si.dataset.detsi||si.dataset.detno));const v=si.dataset.detsi?'Sí':'No';t.cambios.push({campo:'Requiere detención',de:t.requiereDetencion||'(vacío)',a:v,fecha:nowStr()});t.requiereDetencion=v;t.modificado=nowStr();logEvt('Edición',t,'Requiere detención = '+v);save();renderDet();renderBell();toast(`#${t.id}: requiere detención = ${v}`);return;}
+  const p=e.target.closest('[data-prog]');if(!p)return;const t=T(+p.dataset.prog);const w=+p.dataset.w,y=+p.dataset.y;const de=tWk(t);t.historial.push({semana:w,anio:y,resultado:de?'Movida desde '+wkLabel(de):'Asignada desde Sin semana',causa:'Oportunidad de detención',fecha:today(),causaOk:true});if(de){t.historial.push({semana:de.w,anio:de.y,resultado:'Movida a S'+w,causa:'Oportunidad de detención',fecha:today(),causaOk:true});t.reprog=(t.reprog||0)+1;}t.semana=w;t.anio=y;t.modificado=nowStr();logEvt('Reprogramación',t,`→ S${w} por oportunidad de detención`);save();render();toast(`#${t.id} → S${w}`);};
 
 /* ---------- CIERRE SEMANAL ---------- */
 function renderCierre(){
@@ -594,10 +631,10 @@ function renderCierre(){
   const cierreEn=t=>[...(t.historial||[])].reverse().find(h=>h.semana===w&&(h.anio==null||h.anio===y)&&RESULT_CIERRE.includes(h.resultado));
   // programadas en la semana + las que ya fueron cerradas en esa semana (se mantienen en el listado)
   const ts=S.tasks.filter(t=>(t.estado!=='ejecutada'&&inWeek(t,k))||cierreEn(t)).sort((a,b)=>SECS().indexOf(a.seccion)-SECS().indexOf(b.seccion)||a.id-b.id);
-  const cerradas=ts.filter(t=>cierreEn(t)).length;
+  LAST.cierre={ts,w,y,cierreEn};const cerradas=ts.filter(t=>cierreEn(t)).length;
   const CL={Ejecutada:'ok',Parcial:'pend','No ejecutada':'bad'};
   $('#cierreList').innerHTML=ts.length?`<div class="row" style="margin-bottom:8px;gap:14px"><span class="chip">${ts.length} tareas en S${w}</span><span class="chip ok">${ts.filter(t=>(cierreEn(t)||{}).resultado==='Ejecutada').length} ejecutadas</span><span class="chip pend">${ts.filter(t=>(cierreEn(t)||{}).resultado==='Parcial').length} parciales</span><span class="chip bad">${ts.filter(t=>(cierreEn(t)||{}).resultado==='No ejecutada').length} no ejecutadas</span><span class="chip na">${ts.length-cerradas} sin resultado</span></div><table class="tbl"><thead><tr><th>Sem.</th><th>Sección</th><th>Actividad</th><th>OT/Aviso</th><th>Equipo</th><th class="num">Dot.</th><th class="num">Días</th><th>Estado cierre</th><th>Resultado</th><th>Causa</th></tr></thead><tbody>${ts.map(t=>{const c=cierreEn(t);return `<tr>${c?`<td><span class="sem ${c.resultado==='Ejecutada'?'verde':c.resultado==='Parcial'?'amarillo':'rojo'}">${c.resultado}</span></td>`:`<td>${semHtml(t)}</td>`}<td class="xs">${esc(t.seccion)}</td><td class="act" data-open="${t.id}">${esc(t.actividad)}${t.dias>=8?` <span class="chip info">largo aliento · ${spanWeeks(t).length} semanas desde ${wkLabel(tWk(t))}</span>`:''}</td><td class="xs">${esc(t.ot||'')}</td><td class="xs">${esc(t.equipo||'')}</td><td class="num">${t.dotacion??''}</td><td class="num">${t.dias??''}</td><td class="xs">${c?`<span class="chip ${CL[c.resultado]}">${c.resultado}</span><br><span class="muted">${fd(c.fecha)}${c.causa?' · '+esc(c.causa):''}${c.resultado!=='Ejecutada'?(t.semana?' · ahora en '+wkLabel(tWk(t)):' · en Sin semana'):''}</span>`:'<span class="muted">—</span>'}</td><td><select class="in" data-res="${t.id}"><option value="">${c?'(mantener)':'—'}</option>${RESULT_CIERRE.map(r=>`<option>${r}</option>`).join('')}</select></td><td><select class="in" data-causa="${t.id}"><option value="">—</option>${S.causas.map(x=>`<option ${c&&c.causa===x?'selected':''}>${esc(x)}</option>`).join('')}</select></td></tr>`;}).join('')}</tbody></table><div class="row" style="margin-top:10px;justify-content:flex-end"><span class="sm muted">Las tareas cerradas se mantienen en este listado con su resultado; puedes corregirlo eligiendo otro y aplicando de nuevo.</span><button class="btn p" id="btnCerrar">Aplicar cierre de la semana ${w}</button></div>`:'<div class="empty">No hay tareas programadas en esa semana</div>';
-  const b=$('#btnCerrar');if(b)b.onclick=()=>aplicarCierre(k);
+  const b=$('#btnCerrar');if(b)b.onclick=()=>{if(requireEdit())aplicarCierre(k);};
 }
 $('#cierreSem').onchange=renderCierre;
 function aplicarCierre(k){
@@ -617,7 +654,7 @@ function aplicarCierre(k){
       if(res==='Ejecutada'){const last=spanWeeks(t).slice(-1)[0];if(t.dias>=8&&last&&last!==wkKey(k)&&wkDiff({y:+last.split('-')[0],w:+last.split('-')[1]},k)>0){/* largo aliento: sigue */}else{t.estado='ejecutada';t.cerrada=today();}}
       else{t.historial.push({semana:0,resultado:'Devuelta a backlog ('+res+')',causa,fecha:today(),causaOk:!!causa});t.semana=0;t.anio=null;t.reprog=(t.reprog||0)+1;}
     }
-    t.modificado=nowStr();});
+    t.modificado=nowStr();logEvt('Cierre semanal',t,`S${w}: ${res}${causa?' · '+causa:''}`);});
   save();render();toast('Cierre aplicado');
 }
 
@@ -638,7 +675,7 @@ function vieneDe(t,k){
 function renderSemanas(){
   const ws=weeksNext();if(!wk||!ws.some(k=>wkKey(k)===wkKey(wk)))wk=ws[0];
   $('#wsel').innerHTML=ws.map(k=>`<button class="wk ${wkKey(k)===wkKey(wk)?'on':''}" data-w="${wkKey(k)}">S${k.w}${k.y!==curWk().y?' <small>'+k.y+'</small>':''}<span class="c">${weekDates(k.w,k.y)} · ${tareasSemana(k).length}</span></button>`).join('');
-  const ts=tareasSemana(wk),mov=movidasDesde(wk);const dot=ts.reduce((a,t)=>a+(+t.dotacion||0),0),hrs=ts.reduce((a,t)=>a+(horas(t)||0),0);
+  const ts=tareasSemana(wk),mov=movidasDesde(wk);LAST.semanas={ts,wk};const dot=ts.reduce((a,t)=>a+(+t.dotacion||0),0),hrs=ts.reduce((a,t)=>a+(horas(t)||0),0);
   const viene=ts.map(t=>({t,v:vieneDe(t,wk)})).filter(o=>o.v);
   const row=(t,dark,txt)=>{const v=vieneDe(t,wk);return `<tr class="${dark?'movida':''} ${(t.reprog||0)>=2?'rep2':''}"><td class="act" data-open="${t.id}">${t.mga?'<span class="chip" style="background:var(--gold);border-color:var(--gold)">MGA</span> ':''}${esc(t.actividad)}${!dark&&v&&v.g==='a'?` <span class="chip info">${esc(v.txt)}</span>`:''}${(t.reprog||0)>=2?' <span class="chip bad">↻ '+t.reprog+'</span>':''}</td><td class="xs">${esc(t.area||'')}</td><td class="xs">${esc(t.equipo||'')}${t.requiereDetencion==='Sí'&&!detencionOk(t)?' <span class="chip bad" title="Sin ventana de detención">⏻</span>':''}</td><td class="xs">${t.dias?t.dias+' d':''}</td><td>${semHtml(t)}</td><td class="xs">${esc(t.obs||'')}</td>${dark?`<td class="mv">${esc(txt)}</td>`:'<td></td>'}</tr>`;};
   const cols=`<thead><tr><th style="width:40%">Actividad</th><th>Área</th><th>Equipo</th><th>Días</th><th>Requerimientos</th><th>Observación</th><th></th></tr></thead>`;
@@ -659,11 +696,11 @@ function renderEjec(){
   const porSem={};all.forEach(t=>{const c=cierreDe(t);if(c)porSem[c.semana]=(porSem[c.semana]||0)+1;});const ult=weeks[0];
   const parc=S.tasks.reduce((a,t)=>a+(t.historial||[]).filter(h=>h.resultado==='Parcial').length,0),noej=S.tasks.reduce((a,t)=>a+(t.historial||[]).filter(h=>h.resultado==='No ejecutada').length,0);
   $('#kpEjec').innerHTML=`<div class="kpi"><div class="v">${all.length}</div><div class="l">Ejecutadas (total)</div></div><div class="kpi s"><div class="v">${ult?porSem[ult]:0}</div><div class="l">Ejecutadas en S${ult||'–'} (último cierre)</div></div><div class="kpi s"><div class="v">${all.reduce((a,t)=>a+(horas(t)||0),0).toFixed(0)}</div><div class="l">Horas ejecutadas</div></div><div class="kpi g"><div class="v">${parc}</div><div class="l">Cierres parciales (histórico)</div></div><div class="kpi r"><div class="v">${noej}</div><div class="l">No ejecutadas (histórico)</div></div>`;
-  $('#cntEjec').textContent=`${rows.length} de ${all.length}`;
+  LAST.ejecutadas=rows;$('#cntEjec').textContent=`${rows.length} de ${all.length}`;
   $('#ejecList').innerHTML=rows.length?`<table class="tbl"><thead><tr><th>ID</th><th>Cerrada en</th><th>Fecha cierre</th><th>Sección</th><th>Actividad</th><th>Área</th><th>Equipo</th><th>OT/Aviso</th><th class="num">Dot.</th><th class="num">Días</th><th class="num">Horas</th><th>Reprog.</th><th>Origen</th><th></th></tr></thead><tbody>${rows.map(t=>{const c=cierreDe(t)||{};return `<tr><td class="muted xs">${t.id}</td><td><b>S${c.semana||'–'}</b></td><td class="xs">${fd(c.fecha)}</td><td class="xs">${esc(t.seccion)}</td><td class="act" data-open="${t.id}">${esc(t.actividad)}</td><td class="xs">${esc(t.area||'')}</td><td class="xs">${esc(t.equipo||'')}</td><td class="xs">${esc(t.ot||'')}</td><td class="num">${t.dotacion??''}</td><td class="num">${t.dias??''}</td><td class="num">${horas(t)??''}</td><td class="num">${t.reprog||0}</td><td class="xs">${esc(t.origen)}</td><td><button class="btn s" data-reabrir="${t.id}" title="Volver a abrir (vuelve a Sin semana)">Reabrir</button></td></tr>`;}).join('')}</tbody></table>`:'<div class="empty">No hay tareas ejecutadas'+(q||sel.value?' con ese filtro':' todavía. Se cierran desde la pestaña Cierre semanal.')+'</div>';
 }
 $('#qEjec').oninput=renderEjec;$('#fEjecSem').onchange=renderEjec;
-$('#ejecList').onclick=e=>{const b=e.target.closest('[data-reabrir]');if(!b)return;const t=T(+b.dataset.reabrir);if(!confirm(`¿Reabrir la tarea #${t.id}? Volverá al backlog como Sin semana y conservará su historial.`))return;t.estado='abierta';delete t.cerrada;t.semana=0;t.anio=null;t.historial.push({semana:0,resultado:'Reabierta desde Ejecutadas',causa:'',fecha:today(),causaOk:true});t.cambios.push({campo:'Estado',de:'ejecutada',a:'abierta',fecha:nowStr()});t.modificado=nowStr();save();render();toast(`#${t.id} reabierta`);};
+$('#ejecList').onclick=e=>{const b=e.target.closest('[data-reabrir]');if(!b||!requireEdit())return;const t=T(+b.dataset.reabrir);if(!confirm(`¿Reabrir la tarea #${t.id}? Volverá al backlog como Sin semana y conservará su historial.`))return;t.estado='abierta';delete t.cerrada;t.semana=0;t.anio=null;t.historial.push({semana:0,resultado:'Reabierta desde Ejecutadas',causa:'',fecha:today(),causaOk:true});t.cambios.push({campo:'Estado',de:'ejecutada',a:'abierta',fecha:nowStr()});t.modificado=nowStr();logEvt('Reapertura',t,'Reabierta desde Ejecutadas');save();render();toast(`#${t.id} reabierta`);};
 
 /* ---------- MGA ---------- */
 function renderMga(){
@@ -673,9 +710,9 @@ function renderMga(){
   const qm=$('#qMga').value;const rows=abiertas().filter(t=>t.mga&&matchQ(t,qm)).sort((a,b)=>((a.semana?wkDiff(tWk(a),curWk()):999)-(b.semana?wkDiff(tWk(b),curWk()):999))||a.id-b.id);
   const c={verde:0,amarillo:0,rojo:0,gris:0};rows.forEach(t=>c[semaforo(t)]++);
   $('#kpMga').innerHTML=`<div class="kpi s"><div class="v">${rows.length}</div><div class="l">Actividades MGA</div></div><div class="kpi"><div class="v">${rows.filter(t=>estado(t)==='L').length}</div><div class="l">Listas</div></div><div class="kpi g"><div class="v">${rows.filter(t=>estado(t)==='P').length}</div><div class="l">Pendientes</div></div><div class="kpi o"><div class="v">${rows.filter(t=>!t.semana).length}</div><div class="l">Sin semana</div></div><div class="kpi s"><div class="v">${rows.reduce((a,t)=>a+(+t.dotacion||0),0)}</div><div class="l">Dotación total</div></div><div class="kpi s"><div class="v">${rows.reduce((a,t)=>a+(horas(t)||0),0).toFixed(0)}</div><div class="l">Horas totales</div></div>`;
-  $('#cntMga').textContent=`${rows.length} actividades`;$('#mgaList').innerHTML=table(rows.map(t=>rowHtml(t)));
+  LAST.mga=rows;$('#cntMga').textContent=`${rows.length} actividades`;$('#mgaList').innerHTML=table(rows.map(t=>rowHtml(t)));
 }
-$('#mgaSave').onclick=()=>{S.mgaFecha=$('#mgaFecha').value;save();renderMga();renderBell();toast(S.mgaFecha?'Fecha MGA guardada: '+fd(S.mgaFecha):'Fecha MGA borrada');};
+$('#mgaSave').onclick=()=>{if(!requireEdit())return;S.mgaFecha=$('#mgaFecha').value;save();renderMga();renderBell();toast(S.mgaFecha?'Fecha MGA guardada: '+fd(S.mgaFecha):'Fecha MGA borrada');};
 
 /* ---------- FORMULARIO (crear / editar) ---------- */
 let cur=null,orig=null,pending=null;
@@ -731,7 +768,7 @@ const LABEL={origen:'Origen',validacion:'Validación',actividad:'Actividad',secc
 function fmt(k,v){if(v===''||v==null)return '(vacío)';if(k==='semana')return +v===0?'Sin semana':'S'+v;if(k==='prioridadManual'||k==='forzada'||k==='mga')return v?'Sí':'No';if(k==='ingreso')return fd(v);return String(v);}
 function diffs(){const out=[];Object.keys(LABEL).forEach(k=>{const a=orig[k]??'',b=cur[k]??'';if(String(a)!==String(b))out.push({campo:LABEL[k],de:fmt(k,a),a:fmt(k,b)});});REQ_KEYS.forEach(k=>{const a=(orig.reqs||{})[k]||'',b=cur.reqs[k]||'';if(a!==b)out.push({campo:'Req. '+k,de:a||'(vacío)',a:b||'(vacío)'});});return out;}
 $('#dSave').onclick=()=>{
-  readForm();const {errs,warns}=validar();
+  if(!requireEdit())return;readForm();const {errs,warns}=validar();
   if(errs.length){$('#mcTitle').textContent='No se puede guardar';$('#mcBody').innerHTML=`<div class="errbox">${errs.map(e=>'• '+esc(e)).join('<br>')}</div>`;$('#mcOk').style.display='none';$('#mcCancel').textContent='Volver';$('#mConf').classList.add('on');return;}
   const d=cur._new?null:diffs();if(!cur._new&&!d.length){toast('Sin cambios');closeDrawer();return;}
   const dup=cur._new?duplicados():[];let html='';
@@ -746,11 +783,11 @@ $('#mcCancel').onclick=()=>{$('#mConf').classList.remove('on');pending=null;};
 $('#mcOk').onclick=()=>{
   if(!pending)return;
   const d=pending.d,f=nowStr();
-  if(cur._new){if(cur.semana>0)cur.historial.push({semana:cur.semana,anio:cur.anio,resultado:'Asignada al crear',causa:'',fecha:today(),causaOk:true});cur.modificado=f;delete cur._new;S.tasks.push(cur);}
-  else{d.forEach(c=>cur.cambios.push(Object.assign({fecha:f},c)));if(+orig.semana!==+cur.semana||(orig.anio||0)!==(cur.anio||0)){if(cur.semana>0)cur.historial.push({semana:cur.semana,anio:cur.anio,resultado:orig.semana?'Movida desde S'+orig.semana:'Asignada desde Sin semana',causa:'Edición',fecha:today(),causaOk:true});if(orig.semana>0){cur.historial.push({semana:orig.semana,anio:orig.anio,resultado:cur.semana?'Movida a S'+cur.semana:'Devuelta a backlog',causa:'Edición',fecha:today(),causaOk:true});cur.reprog=(cur.reprog||0)+1;}}cur.modificado=f;S.tasks[S.tasks.findIndex(t=>t.id===cur.id)]=cur;}
+  if(cur._new){if(cur.semana>0)cur.historial.push({semana:cur.semana,anio:cur.anio,resultado:'Asignada al crear',causa:'',fecha:today(),causaOk:true});cur.modificado=f;delete cur._new;S.tasks.push(cur);logEvt('Creación',cur,`Origen ${cur.origen} · ${cur.semana?'S'+cur.semana:'Sin semana'}`);}
+  else{d.forEach(c=>cur.cambios.push(Object.assign({fecha:f},c)));if(+orig.semana!==+cur.semana||(orig.anio||0)!==(cur.anio||0)){if(cur.semana>0)cur.historial.push({semana:cur.semana,anio:cur.anio,resultado:orig.semana?'Movida desde S'+orig.semana:'Asignada desde Sin semana',causa:'Edición',fecha:today(),causaOk:true});if(orig.semana>0){cur.historial.push({semana:orig.semana,anio:orig.anio,resultado:cur.semana?'Movida a S'+cur.semana:'Devuelta a backlog',causa:'Edición',fecha:today(),causaOk:true});cur.reprog=(cur.reprog||0)+1;}}cur.modificado=f;S.tasks[S.tasks.findIndex(t=>t.id===cur.id)]=cur;logEvt(+orig.semana!==+cur.semana?'Reprogramación':'Edición',cur,d.map(c=>`${c.campo}: ${c.de} → ${c.a}`).join(' · '));}
   save();$('#mConf').classList.remove('on');pending=null;closeDrawer();render();toast('Guardado · tarea #'+cur.id);
 };
-$('#dDel').onclick=()=>{const m=prompt(`Eliminar la tarea #${cur.id}.\nMotivo (ej. "Repetida con #245"). Quedará en Por validar → Eliminadas y podrás restaurarla:`, 'Repetida con #');if(m===null)return;const con=(m.match(/#\s*(\d+)/)||[])[1];eliminarTarea(T(cur.id),m.trim(),con?+con:null);save();closeDrawer();render();toast(`#${cur.id} eliminada (recuperable en Eliminadas)`);};
+$('#dDel').onclick=()=>{if(!requireEdit())return;const m=prompt(`Eliminar la tarea #${cur.id}.\nMotivo (ej. "Repetida con #245"). Quedará en Por validar → Eliminadas y podrás restaurarla:`, 'Repetida con #');if(m===null)return;const con=(m.match(/#\s*(\d+)/)||[])[1];eliminarTarea(T(cur.id),m.trim(),con?+con:null);logEvt('Eliminación',cur,m.trim());save();closeDrawer();render();toast(`#${cur.id} eliminada (recuperable en Eliminadas)`);};
 function closeDrawer(){$('#drawer').classList.remove('on');$('#overlay').classList.remove('on');}
 $('#dClose').onclick=closeDrawer;$('#dCancel').onclick=closeDrawer;$('#overlay').onclick=closeDrawer;$('#btnNew').onclick=()=>openTask(null);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();$('#mConf').classList.remove('on');}});
@@ -819,7 +856,7 @@ $('#rxGoBtn').onclick=()=>{const el=document.getElementById('rxw-'+$('#rxGo').va
 $('#rxPrint').onclick=()=>window.print();
 const RX=$('#v-reunion');
 RX.addEventListener('change',e=>{
-  const el=e.target;
+  if(!requireEdit()){renderReunion();return;}const el=e.target;
   if(el.dataset.tu){const [id,key]=el.dataset.tu.split('|');const t=T(+id);turnos(t,{y:+key.split('-')[0],w:+key.split('-')[1]})[+el.dataset.i]=el.value===''?'':+el.value;el.parentNode.classList.toggle('on',+el.value>0);save();refreshTotals(el);return;}
   if(el.dataset.ltu){const l=S.libres.find(x=>x.id===el.dataset.ltu);l.turnos[+el.dataset.i]=el.value===''?'':+el.value;el.parentNode.classList.toggle('on',+el.value>0);save();refreshTotals(el);return;}
   if(el.dataset.obsr){const t=T(+el.dataset.obsr);t.obsReunion=el.value;t.modificado=nowStr();save();return;}
@@ -829,15 +866,15 @@ RX.addEventListener('change',e=>{
   if(el.dataset.lf){const l=S.libres.find(x=>x.id===el.dataset.l);l[el.dataset.lf]=el.value;save();if(el.dataset.lf==='causa'&&l.mov){l.obs=l.obs.replace(new RegExp(`S${l.key.split('-')[1]}: sin causa`),`S${l.key.split('-')[1]}: ${el.value}`);renderReunion();}else if(el.dataset.lf==='actividad')renderRxPanels(rxWeeks());return;}
 });
 RX.addEventListener('click',e=>{
-  const a=e.target.closest('[data-addlibre]');if(a){const key=a.dataset.key;S.libres.push({id:'L'+Date.now()+Math.floor(Math.random()*1e5),key,seccion:a.dataset.addlibre,actividad:'',area:'',causa:'',obs:'',mov:'',turnos:Array(14).fill(''),vinculo:null});save();renderReunion();return;}
-  const lk=e.target.closest('[data-link]');if(lk){const l=S.libres.find(x=>x.id===lk.dataset.link);const id=prompt(`Vincular la tarea libre "${l.actividad||'(sin texto)'}" a un ID del Backlog.\nEl texto original se conserva en Observaciones.\nID:`);if(!id)return;const t=T(+id);if(!t){toast('⚠ ID no existe');return;}const [y,w]=l.key.split('-').map(Number);l.vinculo=t.id;t.obsReunion=(t.obsReunion?t.obsReunion+' · ':'')+`S${w} (libre): ${l.actividad}${l.obs?' / '+l.obs:''}`;if(!t.semana||wkKey(tWk(t))!==l.key){const de=tWk(t);t.historial.push({semana:w,anio:y,resultado:de?'Movida desde '+wkLabel(de):'Asignada desde backlog en reunión S'+curWeek(),causa:'Decisión reunión',fecha:today(),causaOk:true});if(de){t.historial.push({semana:de.w,anio:de.y,resultado:'Movida a S'+w,causa:'Decisión reunión',fecha:today(),causaOk:true});t.reprog=(t.reprog||0)+1;}t.semana=w;t.anio=y;}const tu=turnos(t,{y,w});l.turnos.forEach((v,i)=>{if(v!==''&&tu[i]==='')tu[i]=v;});t.modificado=nowStr();save();render();toast(`Libre vinculada a #${t.id}`);return;}
-  const cr=e.target.closest('[data-crear]');if(cr){const l=S.libres.find(x=>x.id===cr.dataset.crear);const [y,w]=l.key.split('-').map(Number);const r={};REQ_KEYS.forEach(k=>r[k]='');const t={id:nextId(),origen:'Reunión',seccion:l.seccion,area:l.area||'',equipo:'',actividad:l.actividad,ot:l.ot||'',dotacion:null,dias:null,semana:w,anio:y,requiereDetencion:'',prioridad:'',prioridadManual:false,criticidad:'',requiereReq:'',reqs:r,validacion:'Por validar',obs:'Creada desde tarea libre de Reunión',obsReunion:l.obs||'',turnos:{[l.key]:l.turnos.slice()},ingreso:today(),modificado:nowStr(),historial:[{semana:w,anio:y,resultado:'Creada en reunión',causa:'',fecha:today(),causaOk:true}],cambios:[],estado:'abierta',reprog:0,forzada:false,idMatriz:'',mga:false};S.tasks.push(t);l.vinculo=t.id;save();render();toast(`Creada #${t.id} (por validar) desde la tarea libre`);return;}
+  if(e.target.closest('[data-addlibre],[data-link],[data-crear]')&&!requireEdit())return;const a=e.target.closest('[data-addlibre]');if(a){const key=a.dataset.key;S.libres.push({id:'L'+Date.now()+Math.floor(Math.random()*1e5),key,seccion:a.dataset.addlibre,actividad:'',area:'',causa:'',obs:'',mov:'',turnos:Array(14).fill(''),vinculo:null});save();renderReunion();return;}
+  const lk=e.target.closest('[data-link]');if(lk){const l=S.libres.find(x=>x.id===lk.dataset.link);const id=prompt(`Vincular la tarea libre "${l.actividad||'(sin texto)'}" a un ID del Backlog.\nEl texto original se conserva en Observaciones.\nID:`);if(!id)return;const t=T(+id);if(!t){toast('⚠ ID no existe');return;}const [y,w]=l.key.split('-').map(Number);l.vinculo=t.id;t.obsReunion=(t.obsReunion?t.obsReunion+' · ':'')+`S${w} (libre): ${l.actividad}${l.obs?' / '+l.obs:''}`;if(!t.semana||wkKey(tWk(t))!==l.key){const de=tWk(t);t.historial.push({semana:w,anio:y,resultado:de?'Movida desde '+wkLabel(de):'Asignada desde backlog en reunión S'+curWeek(),causa:'Decisión reunión',fecha:today(),causaOk:true});if(de){t.historial.push({semana:de.w,anio:de.y,resultado:'Movida a S'+w,causa:'Decisión reunión',fecha:today(),causaOk:true});t.reprog=(t.reprog||0)+1;}t.semana=w;t.anio=y;}const tu=turnos(t,{y,w});l.turnos.forEach((v,i)=>{if(v!==''&&tu[i]==='')tu[i]=v;});t.modificado=nowStr();logEvt('Vinculación',t,`Tarea libre “${l.actividad}” vinculada`);save();render();toast(`Libre vinculada a #${t.id}`);return;}
+  const cr=e.target.closest('[data-crear]');if(cr){const l=S.libres.find(x=>x.id===cr.dataset.crear);const [y,w]=l.key.split('-').map(Number);const r={};REQ_KEYS.forEach(k=>r[k]='');const t={id:nextId(),origen:'Reunión',seccion:l.seccion,area:l.area||'',equipo:'',actividad:l.actividad,ot:l.ot||'',dotacion:null,dias:null,semana:w,anio:y,requiereDetencion:'',prioridad:'',prioridadManual:false,criticidad:'',requiereReq:'',reqs:r,validacion:'Por validar',obs:'Creada desde tarea libre de Reunión',obsReunion:l.obs||'',turnos:{[l.key]:l.turnos.slice()},ingreso:today(),modificado:nowStr(),historial:[{semana:w,anio:y,resultado:'Creada en reunión',causa:'',fecha:today(),causaOk:true}],cambios:[],estado:'abierta',reprog:0,forzada:false,idMatriz:'',mga:false};S.tasks.push(t);l.vinculo=t.id;logEvt('Creación',t,'Creada desde tarea libre de Reunión');save();render();toast(`Creada #${t.id} (por validar) desde la tarea libre`);return;}
 });
 function moverReunion(t,to,causa){
   const de=tWk(t);const y=de?de.y:curWk().y;const anio=to&&de&&to<de.w-20?y+1:y;
   if(to>0)t.historial.push({semana:to,anio,resultado:de?'Movida desde '+wkLabel(de):'Asignada desde backlog en reunión S'+curWeek(),causa,fecha:today(),causaOk:!!causa});
   if(de){t.historial.push({semana:de.w,anio:de.y,resultado:to?'Movida a S'+to:'Devuelta a backlog',causa,fecha:today(),causaOk:!!causa});t.reprog=(t.reprog||0)+1;appendObsR(t,de.w,causa);}
-  t.semana=to;t.anio=to?anio:null;t.modificado=nowStr();save();renderReunion();renderBell();toast(to?`#${t.id} → S${to}${causa?'':' · ⚠ sin causa'}`:`#${t.id} devuelta al backlog`);
+  t.semana=to;t.anio=to?anio:null;t.modificado=nowStr();logEvt('Reprogramación',t,`Reunión: ${de?wkLabel(de):'backlog'} → ${to?'S'+to:'backlog'}${causa?' · '+causa:' · sin causa'}`);save();renderReunion();renderBell();toast(to?`#${t.id} → S${to}${causa?'':' · ⚠ sin causa'}`:`#${t.id} devuelta al backlog`);
 }
 function refreshTotals(el){ // recalcula solo el bloque de la semana
   const blk=el.closest('.rx-week');if(!blk)return;const key=blk.id.replace('rxw-','');const [y,w]=key.split('-').map(Number);const k={y,w};
@@ -857,14 +894,14 @@ $('#cBolsasSave').onclick=()=>{S.bolsas=S.bolsas||{};$$('#cBolsas [data-bg]').fo
 function renderConfig(){
   $('#cHoras').value=S.horasDia;$('#cSem').value=S.semManual||'';$('#cEq').value=S.equipos.join('\n');$('#cCausas').value=S.causas.join('\n');$('#cAlias').value=S.aliasEquipos||'';
   $('#cSecs').innerHTML=SECS().map((s,i)=>`<div class="f"><label>${esc(s)} <button class="btn s" data-up="${i}" title="Subir">↑</button> <button class="btn s" data-dn="${i}" title="Bajar">↓</button></label><textarea class="in" rows="2" data-sec="${esc(s)}">${esc((S.secciones[s]||[]).join(', '))}</textarea></div>`).join('');
-  $('#sbUrl').value=S.sb.url||'';$('#sbKey').value=S.sb.key||'';$('#sbTbl').value=S.sb.tbl||'backlog_sinfra';$('#ghOwner').value=S.gh.owner;$('#ghRepo').value=S.gh.repo;$('#ghBranch').value=S.gh.branch||'main';$('#ghPath').value=S.gh.path||'data';$('#ghToken').value=S.gh.token||'';
+  $('#cPin').value=S.pin||'BeKa';$('#cLogN').value=String(S.logN??5000);$('#sbUrl').value=S.sb.url||'';$('#sbKey').value=S.sb.key||'';$('#sbTbl').value=S.sb.tbl||'backlog_sinfra';$('#ghOwner').value=S.gh.owner;$('#ghRepo').value=S.gh.repo;$('#ghBranch').value=S.gh.branch||'main';$('#ghPath').value=S.gh.path||'data';$('#ghToken').value=S.gh.token||'';
   $('#calVers').innerHTML=S.calendarios.length?`<table class="tbl"><thead><tr><th>Tipo</th><th>Cargado</th><th>Semanas</th><th class="num">Ventanas</th><th></th></tr></thead><tbody>${S.calendarios.slice().sort((a,b)=>b.cargado.localeCompare(a.cargado)).map(c=>`<tr><td>${c.tipo}</td><td class="xs">${fd(c.cargado)} · ${esc(c.archivo||'')}</td><td class="xs">${[...new Set(c.ventanas.map(v=>v.semana))].sort((a,b)=>a-b).map(w=>'S'+w).join(', ')}</td><td class="num">${c.ventanas.length}</td><td><button class="btn s" data-delcal="${c.id}">✕</button></td></tr>`).join('')}</tbody></table>`:'<div class="muted xs">Sin calendarios cargados.</div>';
   renderBolsas();
   $('#impMatrizUI').innerHTML=S.mapMatriz?`<div class="okbox">Mapeo guardado por hoja: ${esc(Object.entries(S.mapMatriz.hojas||{}).map(([h,c])=>h+" (fila "+c.hdrRow+")").join(", "))}. Al elegir un archivo se usará automáticamente; puedes cambiarlo.</div>`:'';
 }
 $('#cSecs').onclick=e=>{const u=e.target.closest('[data-up]'),d=e.target.closest('[data-dn]');if(!u&&!d)return;e.preventDefault();const keys=SECS();const i=+(u?u.dataset.up:d.dataset.dn);const j=u?i-1:i+1;if(j<0||j>=keys.length)return;[keys[i],keys[j]]=[keys[j],keys[i]];const o={};keys.forEach(k=>o[k]=S.secciones[k]);S.secciones=o;save();renderConfig();};
 $('#addSec').onclick=()=>{const n=$('#newSec').value.trim().toUpperCase();if(n&&!S.secciones[n]){S.secciones[n]=[];$('#newSec').value='';save();renderConfig();}};
-$('#cSave').onclick=()=>{S.horasDia=+$('#cHoras').value||7;S.semManual=$('#cSem').value?+$('#cSem').value:'';S.equipos=$('#cEq').value.split('\n').map(x=>x.trim()).filter(Boolean);S.causas=$('#cCausas').value.split('\n').map(x=>x.trim()).filter(Boolean);S.aliasEquipos=$('#cAlias').value;$$('#cSecs textarea[data-sec]').forEach(t=>{S.secciones[t.dataset.sec]=t.value.split(',').map(x=>x.trim()).filter(Boolean);});save();render();toast('Configuración guardada');};
+$('#cSave').onclick=()=>{if(!requireEdit())return;S.horasDia=+$('#cHoras').value||7;S.semManual=$('#cSem').value?+$('#cSem').value:'';S.equipos=$('#cEq').value.split('\n').map(x=>x.trim()).filter(Boolean);S.causas=$('#cCausas').value.split('\n').map(x=>x.trim()).filter(Boolean);S.aliasEquipos=$('#cAlias').value;S.pin=$('#cPin').value.trim()||'BeKa';S.logN=+$('#cLogN').value;logEvt('Configuración',null,'Configuración guardada');$$('#cSecs textarea[data-sec]').forEach(t=>{S.secciones[t.dataset.sec]=t.value.split(',').map(x=>x.trim()).filter(Boolean);});save();render();toast('Configuración guardada');};
 $('#calVers').onclick=e=>{const d=e.target.closest('[data-delcal]');if(d&&confirm('¿Eliminar esta versión del calendario?')){S.calendarios=S.calendarios.filter(c=>c.id!==d.dataset.delcal);save();renderConfig();}};
 
 /* ---------- GITHUB ---------- */
@@ -895,7 +932,7 @@ $('#ghPush').onclick=()=>ghPush(false);$('#ghPull').onclick=()=>ghPull(false);$(
 /* ---------- IMPORTAR MATRIZ DE CRITICIDAD ---------- */
 const MAT_FIELDS=[['idMatriz','ID matriz / N° aviso','*'],['actividad','Actividad / descripción','*'],['seccion','Sección',''],['area','Área',''],['equipo','Equipo',''],['ot','OT / Orden',''],['criticidad','Criticidad / riesgo',''],['dotacion','Dotación',''],['dias','Días',''],['obs','Observación',''],['ingreso','Fecha de ingreso','']];
 let matWb=null;
-$('#impMatriz').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{matWb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});matUI(f.name);}catch(err){toast('No se pudo leer: '+err.message);}};r.readAsArrayBuffer(f);e.target.value='';};
+$('#impMatriz').onchange=e=>{const f=e.target.files[0];if(!f)return;if(!requireEdit()){e.target.value='';return;}const r=new FileReader();r.onload=ev=>{try{matWb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});matUI(f.name);}catch(err){toast('No se pudo leer: '+err.message);}};r.readAsArrayBuffer(f);e.target.value='';};
 function matUI(name){
   const m=S.mapMatriz||{hojas:{}};const hojas=matWb.SheetNames;const cfg=m.hojas||{};
   $('#impMatrizUI').innerHTML=`<div class="sm"><b>${esc(name)}</b></div><div class="sm" style="margin:6px 0 4px">Marca las hojas a importar. <b>Cada hoja se analiza por separado</b>: tiene su propia fila de encabezados y su propio mapeo de columnas (ej. ESTADO AVISOS → infraestructura, ESTADO PIPING → piping).</div><div class="row" id="mHojas" style="gap:6px 14px">${hojas.map(h=>`<label class="sm" style="font-weight:500"><input type="checkbox" value="${esc(h)}" ${cfg[h]?'checked':''}> ${esc(h)}</label>`).join('')}</div><div id="mSheets" style="margin-top:8px"></div><div class="row" style="margin-top:10px"><button class="btn p" id="mGo">Importar hojas marcadas</button></div><div id="mRes"></div>`;
@@ -936,12 +973,13 @@ function matImport(){
       const sm=t.equipo?similares(t,3).filter(o=>eqMatch(t.equipo,o.x.equipo)&&o.s>=0.75):[];if(sm.length){t.validacion='Por validar';t.obs+=' · Posible duplicado de #'+sm[0].x.id;dup++;}
       S.tasks.push(t);byM[norm(idn)]=t;if(t.ot)byOt[norm(t.ot)]=t;n++;}});
   porHoja[hoja]=`${n-n0} nuevas, ${u-u0} actualizadas`;});
+  logEvt('Importación',null,`Matriz de criticidad: ${n} nuevas, ${u} actualizadas (${Object.keys(cfg).join(', ')})`);
   const msg=`<div class="okbox">Importación lista: <b>${n}</b> nuevas, <b>${u}</b> actualizadas${dup?`, <b>${dup}</b> marcadas “Por validar” por posible duplicado`:''}.<br>${Object.entries(porHoja).map(([h,r])=>`· ${esc(h)}: ${esc(r)}`).join('<br>')}</div>`;
   save();render();const res=$('#mRes');if(res)res.innerHTML=msg;else $('#impMatrizUI').insertAdjacentHTML('beforeend',msg);toast(`Matriz importada: ${n} nuevas, ${u} actualizadas`);
 }
 
 /* ---------- IMPORTAR CALENDARIOS DE DETENCIÓN ---------- */
-$('#impCal').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});calImport(wb,f.name);}catch(err){toast('No se pudo leer: '+err.message);}};r.readAsArrayBuffer(f);e.target.value='';};
+$('#impCal').onchange=e=>{const f=e.target.files[0];if(!f)return;if(!requireEdit()){e.target.value='';return;}const r=new FileReader();r.onload=ev=>{try{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});calImport(wb,f.name);}catch(err){toast('No se pudo leer: '+err.message);}};r.readAsArrayBuffer(f);e.target.value='';};
 function calImport(wb,name){
   const tipo=$('#calTipo').value;const mes=$('#calMes').value;let vent=[];
   for(const sh of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[sh],{header:1,defval:null});
@@ -957,7 +995,7 @@ function calImport(wb,name){
   // comparar con versión anterior del mismo tipo
   const prevV=S.calendarios.filter(c=>c.tipo===tipo).sort((a,b)=>b.cargado.localeCompare(a.cargado))[0];
   const alerts=[];if(prevV){const now=new Set(vent.map(v=>norm(v.equipo)+'|'+v.semana));prevV.ventanas.forEach(v=>{const k=norm(v.equipo)+'|'+v.semana;if(!now.has(k)){abiertas().filter(t=>t.requiereDetencion==='Sí'&&eqMatchCal(t.equipo,v.equipo)&&t.semana&&wkKey(tWk(t))===wkKey(vWk(v))).forEach(t=>alerts.push({id:t.id,m:`Desapareció la detención de ${v.equipo} en S${v.semana} (${tipo})`}));}});}
-  S.calendarios.push({id:'c'+Date.now(),tipo,cargado:nowStr(),archivo:name,ventanas:vent});S.calAlerts=[...S.calAlerts.filter(a=>!alerts.some(b=>b.id===a.id)),...alerts];
+  S.calendarios.push({id:'c'+Date.now(),tipo,cargado:nowStr(),archivo:name,ventanas:vent});logEvt('Importación',null,`Calendario ${tipo}: ${vent.length} ventanas (${name})`);S.calAlerts=[...S.calAlerts.filter(a=>!alerts.some(b=>b.id===a.id)),...alerts];
   save();render();toast(`Calendario ${tipo}: ${vent.length} ventanas cargadas${alerts.length?' · '+alerts.length+' tareas afectadas (ver campanita)':''}`);
 }
 
@@ -971,6 +1009,7 @@ $('#btnExport').onclick=()=>{
   weeksNext().forEach(w=>SECS().forEach(s=>tareasSemana(w).filter(t=>t.seccion===s).forEach(t=>{const v=vieneDe(t,w);Sm.push([w.w,w.y,weekDates(w.w,w.y),s,t.id,t.actividad,t.area,t.equipo,t.dias,t.dotacion,horas(t),SEMI[semaforo(t)],t.obs,v?v.txt:'']);})));
   const wsS=XLSX.utils.aoa_to_sheet(Sm);wsS['!cols']=[{wch:8},{wch:14},{wch:26},{wch:6},{wch:60},{wch:14},{wch:12},{wch:6},{wch:8},{wch:8},{wch:16},{wch:30},{wch:30}];XLSX.utils.book_append_sheet(wb,wsS,'Semanas N+1 a N+6');
   const R=[['Semana','Año','Sección','ID','Tipo','Actividad','Área','OT/Aviso','Causa mov.','Observaciones',...DIAS.flatMap(d=>[d+' A',d+' C'])]];rxWeeks().forEach(k=>{const key=wkKey(k);SECS().forEach(sec=>{tareasSemana(k).filter(t=>t.seccion===sec).forEach(t=>R.push([k.w,k.y,sec,t.id,'Oficial',t.actividad,t.area,t.ot,'',t.obsReunion||'',...turnos(t,k)]));(S.libres||[]).filter(l=>l.key===key&&l.seccion===sec&&(l.actividad||'').trim()).forEach(l=>R.push([k.w,k.y,sec,l.vinculo||'','Libre',l.actividad,l.area,l.ot||'',l.causa,l.obs,...l.turnos]));});});XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(R),'Reunión');
+  const LG=[['Fecha y hora','Usuario','Tipo','ID','Tarea','Detalle']];(S.log||[]).forEach(x=>LG.push([fd(x.ts),x.user,x.tipo,x.id??'',x.act,x.det]));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(LG),'Movimientos');
   const EL=[['ID','Eliminada','Motivo','Unida con','Sección','Actividad','Área','Equipo','OT/Aviso','N° aviso','Semana','Origen','Observación']];(S.eliminadas||[]).forEach(e=>EL.push([e.t.id,fd(e.fecha),e.motivo,e.con||'',e.t.seccion,e.t.actividad,e.t.area,e.t.equipo,e.t.ot,e.t.idMatriz,e.t.semana||'',e.t.origen,e.t.obs]));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(EL),'Eliminadas');
   const H=[['ID','Actividad','Semana','Resultado','Causa','Fecha']];S.tasks.forEach(t=>(t.historial||[]).forEach(h=>H.push([t.id,t.actividad,h.semana,h.resultado,h.causa||'',fd(h.fecha)])));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(H),'Historial');
   const V=[['Equipo','Fecha','Semana','Turno','Horas']];ventanas().forEach(v=>V.push([v.equipo,fd(v.fecha),v.semana,v.turno,v.horas]));XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(V),'Ventanas detención');
@@ -980,8 +1019,45 @@ function dl(blob,name){const a=document.createElement('a');a.href=URL.createObje
 $('#btnJson').onclick=()=>dl(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}),'backlog_sinfra_respaldo.json');
 $('#btnJsonIn').onclick=()=>$('#impJson').click();$('#impJson').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const j=JSON.parse(t);if(!j.tasks)throw 0;const gh=S.gh,sb=S.sb;S=j;S.gh=gh;S.sb=sb;save();render();toast('Respaldo restaurado');}catch(err){toast('Archivo inválido');}});e.target.value='';};
 
+/* ---------- LOGIN ---------- */
+$$('#loginForm .modes label').forEach(l=>l.onclick=()=>{$$('#loginForm .modes label').forEach(x=>x.classList.remove('on'));l.classList.add('on');l.querySelector('input').checked=true;$('#lgPinBox').style.display=l.dataset.m==='edit'?'':'none';});
+$('#loginForm').onsubmit=e=>{e.preventDefault();const nombre=$('#lgNombre').value.trim();const modo=$('#loginForm input[name=lgMode]:checked').value;const err=$('#lgErr');err.style.display='none';if(!nombre){err.textContent='Escribe tu nombre.';err.style.display='';return;}if(modo==='edit'&&$('#lgPin').value!==(S.pin||'BeKa')){err.textContent='Clave de edición incorrecta.';err.style.display='';return;}SES={nombre,modo,ts:nowStr()};sessionStorage.setItem('sinfra_ses',JSON.stringify(SES));$('#lgPin').value='';logEvt('Sesión',null,`Inicio de sesión en modo ${modo==='view'?'Visualización':'Edición'}`);saveLocal();applySession();render();toast(`Hola ${nombre}`);};
+function requireEdit(){if(RO()){toast('Estás en modo Visualización: inicia sesión en Edición para modificar');return false;}return true;}
+/* ---------- HISTORIAL DE MOVIMIENTOS ---------- */
+function renderHist(){
+  const L=S.log||[];const us=[...new Set(L.map(x=>x.user))].filter(Boolean).sort(),ts=[...new Set(L.map(x=>x.tipo))].sort();
+  const fu=$('#hUser'),ft=$('#hTipo');const pu=fu.value,pt=ft.value;fu.innerHTML='<option value="">Usuario: todos</option>'+us.map(u=>`<option ${u===pu?'selected':''}>${esc(u)}</option>`).join('');ft.innerHTML='<option value="">Tipo: todos</option>'+ts.map(t=>`<option ${t===pt?'selected':''}>${esc(t)}</option>`).join('');
+  const q=norm($('#hQ').value),d1=$('#hDesde').value,d2=$('#hHasta').value;
+  const rows=L.filter(x=>(!fu.value||x.user===fu.value)&&(!ft.value||x.tipo===ft.value)&&(!d1||x.ts.slice(0,10)>=d1)&&(!d2||x.ts.slice(0,10)<=d2)&&(!q||norm([x.act,x.det,x.user,x.id].join(' ')).includes(q)));
+  LAST.historial=rows;$('#hCnt').textContent=`${rows.length} de ${L.length}`;
+  $('#hList').innerHTML=rows.length?`<table class="tbl"><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Tipo</th><th>Tarea</th><th>Detalle</th></tr></thead><tbody>${rows.slice(0,800).map(x=>`<tr><td class="xs" style="white-space:nowrap">${fd(x.ts)}</td><td class="xs">${esc(x.user)}</td><td><span class="chip">${esc(x.tipo)}</span></td><td class="xs">${x.id!=null&&x.id!=='libre'?`<span class="act" data-open="${x.id}">#${x.id} ${esc(x.act)}</span>`:esc(x.act)}</td><td class="xs">${esc(x.det)}</td></tr>`).join('')}</tbody></table>${rows.length>800?'<div class="empty">Mostrando 800 — filtra para acotar</div>':''}`:'<div class="empty">Sin movimientos registrados</div>';
+}
+['#hQ','#hUser','#hTipo','#hDesde','#hHasta'].forEach(x=>$(x).addEventListener('input',renderHist));
+
+/* ---------- EXPORTAR LA VISTA ACTUAL ---------- */
+const TCOLS=['ID','Origen','Sección','Área','Equipo','Actividad','OT/Aviso','N° aviso SAP','Dotación','Días','Horas','Tipo','Semana','Año','MGA','Prioridad','Criticidad','Requiere detención','Requiere requerimientos',...REQ_KEYS,'Semáforo','Estado','Falta','Validación','Observación','Ingreso','Días en backlog','Reprogramaciones','Estado ejecución','Última modificación'];
+const tRow=t=>[t.id,t.origen,t.seccion,t.area,t.equipo,t.actividad,t.ot,t.idMatriz,t.dotacion,t.dias,horas(t),tipo(t),t.semana||'Sin semana',t.semana?(t.anio||''):'',t.mga?'Sí':'',prioridad(t),t.criticidad,t.requiereDetencion,t.requiereReq,...REQ_KEYS.map(k=>(t.reqs||{})[k]||''),SEMI[semaforo(t)],estado(t)==='L'?'Lista':'Pendiente',faltas(t).join(', '),t.validacion,t.obs,fd(t.ingreso),diasBacklog(t),t.reprog||0,t.estado,fd(t.modificado)];
+function xlsOut(sheets,name){const wb=XLSX.utils.book_new();sheets.forEach(([nm,aoa,w])=>{const ws=XLSX.utils.aoa_to_sheet(aoa);if(w)ws['!cols']=w;else ws['!cols']=(aoa[0]||[]).map(h=>({wch:/Actividad|Detalle|Observación/.test(h)?55:14}));XLSX.utils.book_append_sheet(wb,ws,nm.slice(0,31));});const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});dl(new Blob([out]),`${name}_${today()}.xlsx`);toast('Excel exportado: '+name);}
+const tSheet=(nm,list)=>[nm,[TCOLS,...list.map(tRow)]];
+$('#btnXlsView').onclick=()=>{
+  const v=curView();
+  if(v==='backlog')return xlsOut([tSheet('Backlog filtrado',LAST.backlog||[])],'Backlog_filtrado');
+  if(v==='sinsemana')return xlsOut([tSheet('Sin semana',LAST.sinsemana||[])],'Sin_semana');
+  if(v==='listas')return xlsOut([tSheet('Listas para programar',LAST.listas||[])],'Listas_para_programar');
+  if(v==='pendientes'){const P=[TCOLS.concat(['Qué falta'])];(LAST.pendientes||[]).forEach(t=>P.push(tRow(t).concat([faltas(t).join(' · ')])));return xlsOut([['Pendientes',P]],'Pendientes');}
+  if(v==='validar'){const EL=[['ID','Eliminada','Motivo','Unida con','Sección','Actividad','Área','Equipo','OT/Aviso','N° aviso','Semana','Origen','Observación']];(S.eliminadas||[]).forEach(e=>EL.push([e.t.id,fd(e.fecha),e.motivo,e.con||'',e.t.seccion,e.t.actividad,e.t.area,e.t.equipo,e.t.ot,e.t.idMatriz,e.t.semana||'',e.t.origen,e.t.obs]));return xlsOut([tSheet('Por validar',LAST.validar||[]),['Eliminadas',EL]],'Por_validar_y_eliminadas');}
+  if(v==='ejecutadas'){const E=[TCOLS.concat(['Semana cierre','Fecha cierre','Causa'])];(LAST.ejecutadas||[]).forEach(t=>{const c=cierreDe(t)||{};E.push(tRow(t).concat([c.semana||'',fd(c.fecha),c.causa||'']));});return xlsOut([['Ejecutadas',E]],'Ejecutadas');}
+  if(v==='mga'){const M=[['Fecha próxima MGA',fd(S.mgaFecha)||'—'],[]].concat([TCOLS],(LAST.mga||[]).map(tRow));return xlsOut([['MGA',M]],'MGA');}
+  if(v==='historial'){const L=[['Fecha y hora','Usuario','Tipo','ID','Tarea','Detalle']];(LAST.historial||[]).forEach(x=>L.push([fd(x.ts),x.user,x.tipo,x.id??'',x.act,x.det]));return xlsOut([['Historial de movimientos',L]],'Historial_movimientos');}
+  if(v==='cierre'){const c=LAST.cierre;if(!c)return;const C=[['Semana','Año','Sección','ID','Actividad','OT/Aviso','Equipo','Dotación','Días','Resultado','Causa','Fecha cierre','Dónde quedó']];c.ts.forEach(t=>{const h=c.cierreEn(t)||{};C.push([c.w,c.y,t.seccion,t.id,t.actividad,t.ot,t.equipo,t.dotacion,t.dias,h.resultado||'',h.causa||'',fd(h.fecha),t.estado==='ejecutada'?'Ejecutada':(t.semana?wkLabel(tWk(t)):'Sin semana')]);});return xlsOut([[`Cierre S${c.w}`,C]],`Cierre_S${c.w}`);}
+  if(v==='semanas'){const o=LAST.semanas;if(!o)return;const W=[['Semana','Año','Sección','ID','Actividad','Área','Equipo','OT/Aviso','Días','Dotación','Horas','Requerimientos','Observación','Viene de']];SECS().forEach(sec=>o.ts.filter(t=>t.seccion===sec).forEach(t=>{const vd=vieneDe(t,o.wk);W.push([o.wk.w,o.wk.y,sec,t.id,t.actividad,t.area,t.equipo,t.ot,t.dias,t.dotacion,horas(t),SEMI[semaforo(t)],t.obs,vd?vd.txt:'']);}));return xlsOut([[`Semana ${o.wk.w}`,W]],`Semana_S${o.wk.w}`);}
+  if(v==='detencion'){const G=LAST.detencion||[];const D=[['Equipo','Semana','Año','Horas','Días/turnos','Tareas con detención = Sí (listas)','Con pendientes','Candidatas sin definir']];const TT=[['Equipo ventana','Semana ventana','ID','Actividad','Sección','Área','Equipo tarea','Semáforo','Estado','Semana tarea','Grupo']];G.forEach(w=>{const det=abiertas().filter(t=>t.requiereDetencion==='Sí'&&eqMatchCal(t.equipo,w.equipo));const cand=abiertas().filter(t=>t.requiereDetencion===''&&t.equipo&&eqMatchCal(t.equipo,w.equipo));D.push([w.equipo,w.k.w,w.k.y,w.horas,w.dias.join(' · '),det.filter(t=>estado(t)==='L').length,det.filter(t=>estado(t)==='P').length,cand.length]);det.forEach(t=>TT.push([w.equipo,w.k.w,t.id,t.actividad,t.seccion,t.area,t.equipo,SEMI[semaforo(t)],estado(t)==='L'?'Lista':'Pendiente',t.semana?wkLabel(tWk(t)):'Sin semana',estado(t)==='L'?'Lista':'Con pendientes']));cand.forEach(t=>TT.push([w.equipo,w.k.w,t.id,t.actividad,t.seccion,t.area,t.equipo,SEMI[semaforo(t)],estado(t)==='L'?'Lista':'Pendiente',t.semana?wkLabel(tWk(t)):'Sin semana','Candidata']));});return xlsOut([['Ventanas',D],['Tareas por ventana',TT]],'Oportunidad_detencion');}
+  if(v==='reunion'){const R=[['Semana','Año','Sección','ID','Tipo','Actividad','Área','OT/Aviso','Causa mov.','Observaciones',...DIAS.flatMap(d=>[d+' A',d+' C'])]];rxWeeks().forEach(k=>{const key=wkKey(k);SECS().forEach(sec=>{tareasSemana(k).filter(t=>t.seccion===sec).forEach(t=>R.push([k.w,k.y,sec,t.id,'Oficial',t.actividad,t.area,t.ot,'',t.obsReunion||'',...turnos(t,k)]));(S.libres||[]).filter(l=>l.key===key&&l.seccion===sec&&(l.actividad||'').trim()).forEach(l=>R.push([k.w,k.y,sec,l.vinculo||'','Libre',l.actividad,l.area,l.ot||'',l.causa,l.obs,...l.turnos]));});});return xlsOut([['Reunión',R]],'Reunion_programa_semanal');}
+  if(v==='config'){$('#btnExport').click();return;}
+};
+
 /* ---------- INICIO ---------- */
-render();if(sbOk())sbStart();else if(ghOk())ghPull(true);
+applySession();render();if(sbOk())sbStart();else if(ghOk())ghPull(true);
 </script>
 </body>
 </html>
