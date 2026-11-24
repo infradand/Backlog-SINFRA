@@ -295,6 +295,7 @@ body.ro .ro-hide{display:none!important}body.ro .rxt input,body.ro .rxt select,b
       <h3>General</h3>
       <div class="f2"><div class="f"><label>Horas por día</label><input class="in" id="cHoras" type="number" min="1"></div><div class="f"><label>Semana actual (vacío = automática ISO)</label><input class="in" id="cSem" type="number" min="1" max="53" placeholder="auto"></div></div>
       <div class="f2"><div class="f"><label>Clave del modo Edición (inicio de sesión)</label><input class="in" id="cPin" type="password" placeholder="BeKa"></div><div class="f"><label>Guardar historial de movimientos</label><select class="in" id="cLogN"><option value="5000">Últimos 5.000 eventos</option><option value="20000">Últimos 20.000 eventos</option><option value="0">Sin límite</option></select></div></div>
+      <div class="f" style="margin-top:10px;border:1px solid #e7b7b3;border-radius:8px;padding:10px;background:#fff6f5"><label style="color:#962a26">Restablecer datos (borra las pruebas)</label><div class="muted sm" style="margin-bottom:8px">Vuelve la cartera a los datos originales: se eliminan cierres, continuaciones, uniones, dotaciones, filas manuales de Reunión, tareas creadas a mano y el historial de movimientos. Se conserva la configuración. Antes de borrar se descarga un respaldo.</div><button class="btn" id="cReset" type="button" style="color:#962a26;border-color:#e7b7b3">Restablecer a los datos originales…</button></div>
       <div class="f"><label>Equipos (misma lista que los calendarios de detención) · uno por línea</label><textarea class="in" id="cEq" rows="7"></textarea></div>
       <div class="f"><label>Causas (cierre y movimientos) · una por línea</label><textarea class="in" id="cCausas" rows="5"></textarea></div>
       <div class="f"><label>Alias de equipos (para cruzar el texto libre de la matriz con el calendario) · formato EQUIPO: alias1, alias2</label><textarea class="in" id="cAlias" rows="7"></textarea></div>
@@ -1113,6 +1114,21 @@ function renderConfig(){
 }
 $('#cSecs').onclick=e=>{const u=e.target.closest('[data-up]'),d=e.target.closest('[data-dn]');if(!u&&!d)return;e.preventDefault();const keys=SECS();const i=+(u?u.dataset.up:d.dataset.dn);const j=u?i-1:i+1;if(j<0||j>=keys.length)return;[keys[i],keys[j]]=[keys[j],keys[i]];const o={};keys.forEach(k=>o[k]=S.secciones[k]);S.secciones=o;save();renderConfig();};
 $('#addSec').onclick=()=>{const n=$('#newSec').value.trim().toUpperCase();if(n&&!S.secciones[n]){S.secciones[n]=[];$('#newSec').value='';save();renderConfig();}};
+$('#cReset').onclick=()=>{if(!requireEdit())return;
+  const f=fresh();const nT=S.tasks.length,nEj=S.tasks.filter(t=>t.estado==='ejecutada').length,nL=(S.libres||[]).filter(l=>(l.actividad||'').trim()||(l.turnos||[]).some(v=>+v>0)).length,nTu=S.tasks.filter(t=>t.turnos&&Object.values(t.turnos).some(a=>(a||[]).some(v=>+v>0))).length;
+  $('#mzTitle').textContent='Restablecer la cartera a los datos originales';
+  $('#mzBody').innerHTML=`<div class="errbox" style="margin-bottom:10px">Esto borra los datos para <b>todas las personas</b> que usan la app (también en Supabase) y no se puede deshacer desde la app.</div>
+   <table class="tbl"><tbody><tr><th style="width:55%">Actividades ahora → después</th><td>${nT} → ${f.tasks.length}</td></tr><tr><th>Ejecutadas / cerradas que vuelven a abiertas</th><td>${nEj}</td></tr><tr><th>Actividades con dotación por turno que se borra</th><td>${nTu}</td></tr><tr><th>Filas manuales de Reunión que se borran</th><td>${nL}</td></tr><tr><th>Registros del Historial que se borran</th><td>${(S.log||[]).length}</td></tr><tr><th>Uniones y eliminadas guardadas</th><td>${(S.uniones||[]).length} / ${(S.eliminadas||[]).length}</td></tr></tbody></table>
+   <div class="muted sm" style="margin:10px 0 6px">Se conserva: configuración, causas, secciones, equipos, calendarios de detención, bolsas y conexión a Supabase. Se descargará un respaldo (.json) antes de borrar.</div>
+   <div class="f"><label>Para confirmar escribe RESTABLECER</label><input class="in" id="rzTxt" autocomplete="off"></div>`;
+  const close=()=>$('#mCierre').classList.remove('on');
+  $('#mzCancel').textContent='Cancelar';$('#mzCancel').onclick=close;
+  $('#mzOk').textContent='Restablecer';$('#mzOk').onclick=()=>{if($('#rzTxt').value.trim().toUpperCase()!=='RESTABLECER'){toast('Escribe RESTABLECER para confirmar');return;}
+    try{const o=Object.assign({},S);delete o.gh;delete o.sb;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download='Respaldo_Cartera_SINFRA_'+today()+'.json';document.body.appendChild(a);a.click();a.remove();}catch(e){}
+    S.tasks=f.tasks;S.libres=[];S.eliminadas=[];S.uniones=[];S.log=[];S.mgaFecha='';
+    Object.keys(TU_PEND).forEach(k=>delete TU_PEND[k]);tuPendSave();Object.keys(CONT_PLAN).forEach(k=>delete CONT_PLAN[k]);CIERRE_UNLOCK.clear();window._noMerge=true;
+    logEvt('Configuración',null,'Datos restablecidos a los originales');close();save();render();toast('Cartera restablecida a los datos originales');};
+  $('#mCierre').classList.add('on');};
 $('#cSave').onclick=()=>{if(!requireEdit())return;S.horasDia=+$('#cHoras').value||7;S.semManual=$('#cSem').value?+$('#cSem').value:'';S.equipos=$('#cEq').value.split('\n').map(x=>x.trim()).filter(Boolean);S.causas=$('#cCausas').value.split('\n').map(x=>x.trim()).filter(Boolean);S.aliasEquipos=$('#cAlias').value;S.pin=$('#cPin').value.trim()||'BeKa';S.logN=+$('#cLogN').value;logEvt('Configuración',null,'Configuración guardada');$$('#cSecs textarea[data-sec]').forEach(t=>{S.secciones[t.dataset.sec]=t.value.split(',').map(x=>x.trim()).filter(Boolean);});save();render();toast('Configuración guardada');};
 $('#calVers').onclick=e=>{const d=e.target.closest('[data-delcal]');if(d&&confirm('¿Eliminar esta versión del calendario?')){S.calendarios=S.calendarios.filter(c=>c.id!==d.dataset.delcal);save();renderConfig();}};
 
@@ -1141,8 +1157,8 @@ function tuMerge(d){let n=0;
   return n;}
 {const _push=sbPush;sbPush=async function(silent){
   if(!sbOk()||sbBusy||SB_MERGING)return;SB_MERGING=true;const keys=Object.assign({},TU_PEND);
-  try{const r=await fetch(`${S.sb.url.replace(/\/$/,'')}/rest/v1/${S.sb.tbl}?id=eq.main&select=data`,{headers:sbH()});if(r.ok){const j=await r.json();const d=j[0]&&j[0].data;if(d&&(d.updated||0)>SB_BASE&&d.updated!==S.updated){if(tuMerge(d)){saveLocal();try{tuRefreshDom();}catch(e){}}}}}catch(e){}
-  SB_MERGING=false;const sent=S.updated;await _push(silent);
+  try{const r=await fetch(`${S.sb.url.replace(/\/$/,'')}/rest/v1/${S.sb.tbl}?id=eq.main&select=data`,{headers:sbH()});if(r.ok){const j=await r.json();const d=j[0]&&j[0].data;if(d&&!window._noMerge&&(d.updated||0)>SB_BASE&&d.updated!==S.updated){if(tuMerge(d)){saveLocal();try{tuRefreshDom();}catch(e){}}}}}catch(e){}
+  SB_MERGING=false;const sent=S.updated;await _push(silent);if(sbState==='ok')window._noMerge=false;
   if(sbState==='ok'){SB_BASE=sent;Object.keys(keys).forEach(k=>{if(TU_PEND[k]===keys[k])delete TU_PEND[k];});tuPendSave();}};
  const _pull=sbPull;sbPull=async function(silent){const b=S;const r=await _pull(silent);if(S!==b){SB_BASE=S.updated||0;if(tuAplicarPend()){saveLocal();try{if(!$('#drawer').classList.contains('on'))render();}catch(e){}}}return r;};}
 $('#sbSave').onclick=async()=>{S.sb={url:$('#sbUrl').value.trim(),key:$('#sbKey').value.trim(),tbl:$('#sbTbl').value.trim()||'backlog_sinfra'};saveLocal();if(!sbOk())return sbMsg('Completa URL, clave y tabla.');sbMsg('Conectando…',true);const had=await sbPull(false);if(!had){await sbPush(false);}sbStart();};
